@@ -44,6 +44,7 @@ ESourceRegistry *SourceRegistry::object() const
 void SourceRegistry::load()
 {
     if (m_sourceRegistry) {
+        //qWarning() << "SourceRegistry::load - already made";
         return;
     }
 
@@ -52,7 +53,7 @@ void SourceRegistry::load()
     GError *error = 0;
     m_sourceRegistry = e_source_registry_new_sync(0, &error);
     if (error) {
-        qWarning() << "Fail to create sourge registry:" << error->message;
+        qWarning() << "Fail to create source registry:" << error->message;
         g_error_free(error);
         return;
     }
@@ -131,6 +132,7 @@ QList<QOrganizerCollection> SourceRegistry::collections() const
 
 QStringList SourceRegistry::collectionsIds() const
 {
+    //qWarning() << "SourceRegistry::CollectionIds requested";
     return m_collections.keys();
 }
 
@@ -193,6 +195,7 @@ void SourceRegistry::remove(const QString &collectionId)
 EClient* SourceRegistry::client(const QString &collectionId)
 {
     if (collectionId.isEmpty()) {
+        //qWarning() << "No CollectionId requested";
         return 0;
     }
 
@@ -255,6 +258,7 @@ QOrganizerCollection SourceRegistry::registerSource(ESource *source, bool isDefa
 {
     QString collectionId = findCollection(source);
     if (collectionId.isEmpty()) {
+        //qWarning() << "SourceRegistry::registerSource s: " << source;
         bool isEnabled = e_source_get_enabled(source);
         bool isCalendar = e_source_has_extension(source, E_SOURCE_EXTENSION_CALENDAR);
         bool isTaskList = e_source_has_extension(source, E_SOURCE_EXTENSION_TASK_LIST);
@@ -264,7 +268,10 @@ QOrganizerCollection SourceRegistry::registerSource(ESource *source, bool isDefa
         if ( isEnabled && (isCalendar || isTaskList || isMemoList || isAlarms)) {
             QOrganizerEDSCollectionEngineId *edsId = 0;
             QOrganizerCollection collection = parseSource(source, isDefault, &edsId);
-            QString collectionId = collection.id().toString();
+            QOrganizerCollectionId id = collection.id();
+            QString collectionId = id.toString();
+
+            //qWarning() << "SourceRegistry::registerSource enabled: "<<isEnabled<< ", or cal/tsk/mem/alm colId: " << collectionId;
 
             if (!m_collectionsMap.contains(collectionId)) {
                 m_collections.insert(collectionId, collection);
@@ -273,6 +280,7 @@ QOrganizerCollection SourceRegistry::registerSource(ESource *source, bool isDefa
                 g_object_ref(source);
 
                 Q_EMIT sourceAdded(collectionId);
+                //qWarning() << "emit source added";
             } else {
                 Q_ASSERT(false);
             }
@@ -306,12 +314,15 @@ QOrganizerCollection SourceRegistry::parseSource(ESource *source,
                                                  bool isDefault,
                                                  QOrganizerEDSCollectionEngineId **edsId)
 {
-    *edsId = new QOrganizerEDSCollectionEngineId(source);
-    QOrganizerCollectionId id(*edsId);
+    QOrganizerEDSCollectionEngineId *engineId = new QOrganizerEDSCollectionEngineId(source);
+    *edsId = engineId;
+    
+    QOrganizerCollectionId id(engineId->managerUri(), engineId->toByteArray());
     QOrganizerCollection collection;
 
     collection.setId(id);
     updateCollection(&collection, isDefault, source);
+    //qWarning() << "SourceRegistry::parseSource d:"<<isDefault<<", id.mU: " << id.managerUri() << ", id.lI: " << QString().fromUtf8(id.localId());
     return collection;
 }
 
@@ -326,6 +337,7 @@ QByteArray SourceRegistry::defaultCollectionId() const
     ESource *defaultCalendarSource = e_source_registry_ref_default_calendar(m_sourceRegistry);
     QString eId = QString::fromUtf8(e_source_get_uid(defaultCalendarSource));
     g_object_unref(defaultCalendarSource);
+    //qWarning() << "defaultCollectionId: " << eId;
     return eId.toUtf8();
 }
 
@@ -333,6 +345,7 @@ void SourceRegistry::onSourceAdded(ESourceRegistry *registry,
                                    ESource *source,
                                    SourceRegistry *self)
 {
+    //qWarning() << "SourceRegistry::onSourceAdded r: " << registry << ", s: " << source;
     Q_UNUSED(registry);
     self->insert(source);
 }

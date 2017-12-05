@@ -87,6 +87,7 @@ QOrganizerEDSEngine::QOrganizerEDSEngine(QOrganizerEDSEngineData *data)
     d->m_sharedEngines << this;
 
     Q_FOREACH(const QString &collectionId, d->m_sourceRegistry->collectionsIds()){
+        //qWarning() << "QOrganizerEDSEngine - onSourceAdded with CollectionId :" + collectionId;
         onSourceAdded(collectionId);
     }
     connect(d->m_sourceRegistry, SIGNAL(sourceAdded(QString)), SLOT(onSourceAdded(QString)));
@@ -709,13 +710,13 @@ void QOrganizerEDSEngine::saveItemsAsyncCreated(GObject *source_object,
 
             QOrganizerEDSEngineId *eid = new QOrganizerEDSEngineId(currentCollectionId,
                                                                    QString::fromUtf8(uid));
-            item.setId(QOrganizerItemId(eid));
+            item.setId(QtOrganizer::QOrganizerItemId(eid->managerUri(), eid->toByteArray()));
             item.setGuid(QString("%1/%2")
                          .arg(eid->m_collectionId)
                          .arg(eid->m_itemId));
 
             QOrganizerEDSCollectionEngineId *edsCollectionId = new QOrganizerEDSCollectionEngineId(currentCollectionId);
-            item.setCollectionId(QOrganizerCollectionId(edsCollectionId));
+            item.setCollectionId(QtOrganizer::QOrganizerCollectionId(edsCollectionId->managerUri(), edsCollectionId->toByteArray()));
         }
         g_slist_free_full(uids, g_free);
         data->appendResults(items);
@@ -1269,6 +1270,7 @@ int QOrganizerEDSEngine::runningRequestCount() const
 
 void QOrganizerEDSEngine::onSourceAdded(const QString &collectionId)
 {
+    //qWarning() << "QOrganizerEDSEngine::onSourceAdded";
     d->watch(collectionId);
     Q_EMIT collectionsAdded(QList<QOrganizerCollectionId>() << QOrganizerCollectionId::fromString(collectionId));
 }
@@ -2454,18 +2456,18 @@ void QOrganizerEDSEngine::parseId(ECalComponent *comp,
     }
 
     edsId = QOrganizerEDSEngineId::fromComponentId(edsCollectionId->m_collectionId, id, &edsParentId);
-    item->setId(QOrganizerItemId(edsId));
+    item->setId(QOrganizerItemId(edsId->managerUri(), edsId->toByteArray()));
     item->setGuid(QString("%1/%2")
                     .arg(edsCollectionId->m_collectionId)
                     .arg(edsId->m_itemId));
 
     if (edsParentId) {
         QOrganizerItemParent itemParent = item->detail(QOrganizerItemDetail::TypeParent);
-        itemParent.setParentId(QOrganizerItemId(edsParentId));
+        itemParent.setParentId(QOrganizerItemId(edsParentId->managerUri(), edsParentId->toByteArray()));
         item->saveDetail(&itemParent);
     }
 
-    QOrganizerCollectionId cId = QOrganizerCollectionId(edsCollectionId);
+    QOrganizerCollectionId cId = QOrganizerCollectionId(edsCollectionId->managerUri(),edsCollectionId->toByteArray());
     item->setCollectionId(cId);
     e_cal_component_free_id(id);
 }

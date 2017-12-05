@@ -19,12 +19,11 @@
 #ifndef __QORGANIZER_EDS_COLLECTION_ENGINEID_H__
 #define __QORGANIZER_EDS_COLLECTION_ENGINEID_H__
 
-#include <QtOrganizer/QOrganizerCollectionEngineId>
-
 #include <libedataserver/libedataserver.h>
 #include <libecal/libecal.h>
+#include <QtCore/QSharedData>
 
-class QOrganizerEDSCollectionEngineId : public QtOrganizer::QOrganizerCollectionEngineId
+class QOrganizerEDSCollectionEngineId : public QSharedData
 {
 public:
     QOrganizerEDSCollectionEngineId();
@@ -33,13 +32,14 @@ public:
     QOrganizerEDSCollectionEngineId(ESource *source);
     ~QOrganizerEDSCollectionEngineId();
 
-    bool isEqualTo(const QtOrganizer::QOrganizerCollectionEngineId* other) const;
-    bool isLessThan(const QtOrganizer::QOrganizerCollectionEngineId* other) const;
+    bool isEqualTo(const QOrganizerEDSCollectionEngineId* other) const;
+    bool isLessThan(const QOrganizerEDSCollectionEngineId* other) const;
 
     QString managerUri() const;
     QOrganizerEDSCollectionEngineId *clone() const;
 
     QString toString() const;
+    QByteArray toByteArray() const;
 
     uint hash() const;
 
@@ -55,6 +55,7 @@ private:
     friend class SourceRegistry;
     //friend class ViewWatcher;
     friend class QOrganizerEDSEngine;
+
 };
 
 

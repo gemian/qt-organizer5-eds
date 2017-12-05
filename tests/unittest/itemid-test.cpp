@@ -61,11 +61,13 @@ private Q_SLOTS:
     void testCreateOrganizerId()
     {
         QOrganizerEDSEngineId id("system-calendar", "20130814T212003Z-13580-1000-1995-22@ubuntu");
-        QOrganizerItemId id2(new QOrganizerEDSEngineId(id));
+        auto engineId = new QOrganizerEDSEngineId(id);
+        QOrganizerItemId id2(engineId->managerUri(), engineId->toByteArray());
         QCOMPARE(id2.managerUri(), QStringLiteral("qtorganizer:eds:"));
         QString targetId = QString("qtorganizer:eds::") + id.toString();
         QCOMPARE(id2.toString(), targetId);
     }
+
 };
 
 QTEST_MAIN(ItemIdTest)

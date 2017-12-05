@@ -1,1 +1,4 @@
 canonical pim service.
+
+
+Had to install: libedataserver1.2-dev libecal1.2-dev

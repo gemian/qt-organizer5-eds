@@ -24,13 +24,11 @@
 using namespace QtOrganizer;
 
 QOrganizerEDSEngineId::QOrganizerEDSEngineId()
-    : QOrganizerItemEngineId()
 {
 }
 
 QOrganizerEDSEngineId::QOrganizerEDSEngineId(const QString &collectionId,
                                              const QString &id)
-    : QOrganizerItemEngineId()
 {
     if (!collectionId.isNull() && !collectionId.isEmpty()) {
         m_collectionId = collectionId.contains(":") ? collectionId.mid(collectionId.lastIndexOf(":")+1) : collectionId;
@@ -46,14 +44,12 @@ QOrganizerEDSEngineId::~QOrganizerEDSEngineId()
 }
 
 QOrganizerEDSEngineId::QOrganizerEDSEngineId(const QOrganizerEDSEngineId& other)
-    : QOrganizerItemEngineId(),
-      m_collectionId(other.m_collectionId),
+    : m_collectionId(other.m_collectionId),
       m_itemId(other.m_itemId)
 {
 }
 
 QOrganizerEDSEngineId::QOrganizerEDSEngineId(const QString& idString)
-    : QOrganizerItemEngineId()
 {
     QString edsIdPart = idString.contains(":") ? idString.mid(idString.lastIndexOf(":")+1) : idString;
     QStringList idParts = edsIdPart.split("/");
@@ -62,7 +58,7 @@ QOrganizerEDSEngineId::QOrganizerEDSEngineId(const QString& idString)
     m_itemId = idParts.last();
 }
 
-bool QOrganizerEDSEngineId::isEqualTo(const QOrganizerItemEngineId* other) const
+bool QOrganizerEDSEngineId::isEqualTo(const QOrganizerEDSEngineId* other) const
 {
     // note: we don't need to check the collectionId because itemIds in the memory
     // engine are unique regardless of which collection the item is in; also, we
@@ -73,7 +69,7 @@ bool QOrganizerEDSEngineId::isEqualTo(const QOrganizerItemEngineId* other) const
     return true;
 }
 
-bool QOrganizerEDSEngineId::isLessThan(const QOrganizerItemEngineId* other) const
+bool QOrganizerEDSEngineId::isLessThan(const QOrganizerEDSEngineId* other) const
 {
     // order by collection, then by item in collection.
     const QOrganizerEDSEngineId* otherPtr = static_cast<const QOrganizerEDSEngineId*>(other);
@@ -94,7 +90,7 @@ QString QOrganizerEDSEngineId::toString() const
     return QString("%1/%2").arg(m_collectionId).arg(m_itemId);
 }
 
-QOrganizerItemEngineId* QOrganizerEDSEngineId::clone() const
+QOrganizerEDSEngineId* QOrganizerEDSEngineId::clone() const
 {
     return new QOrganizerEDSEngineId(m_collectionId, m_itemId);
 }
@@ -166,3 +162,26 @@ QOrganizerEDSEngineId *QOrganizerEDSEngineId::fromComponentId(const QString &cId
 
     return new QOrganizerEDSEngineId(cId, iId);
 }
+
+static inline QByteArray escapeColon(const QByteArray &param)
+{
+    QByteArray ret;
+    const int len = param.length();
+    ret.reserve(len + (len >> 3));
+    for (QByteArray::const_iterator it = param.begin(), end = param.end(); it != end; ++it) {
+        switch (*it) {
+            case ':':
+                ret += "&#58;";
+                break;
+            default:
+                ret += *it;
+                break;
+        }
+    }
+    return ret;
+}
+
+QByteArray QOrganizerEDSEngineId::toByteArray() const {
+    return (escapeColon(QByteArray().append(toString())));
+}
+

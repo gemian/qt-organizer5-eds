@@ -24,8 +24,10 @@
 QOrganizerEDSCollectionEngineId::QOrganizerEDSCollectionEngineId(ESource *source)
     : m_esource(source)
 {
+//    qWarning() << "QOrganizerEDSCollectionEngineId: " << source;
     g_object_ref(m_esource);
     m_collectionId = QString::fromUtf8(e_source_get_uid(m_esource));
+//    qWarning() << "QOrganizerEDSCollectionEngineId cId: " << m_collectionId;
     if (e_source_has_extension(m_esource, E_SOURCE_EXTENSION_CALENDAR)) {
         m_sourceType = E_CAL_CLIENT_SOURCE_TYPE_EVENTS;
     } else if (e_source_has_extension(m_esource, E_SOURCE_EXTENSION_TASK_LIST)) {
@@ -39,14 +41,12 @@ QOrganizerEDSCollectionEngineId::QOrganizerEDSCollectionEngineId(ESource *source
 }
 
 QOrganizerEDSCollectionEngineId::QOrganizerEDSCollectionEngineId()
-    : QOrganizerCollectionEngineId(),
-      m_esource(0)
+    : m_esource(0)
 {
 }
 
 QOrganizerEDSCollectionEngineId::QOrganizerEDSCollectionEngineId(const QOrganizerEDSCollectionEngineId& other)
-    : QOrganizerCollectionEngineId(),
-      m_collectionId(other.m_collectionId),
+    : m_collectionId(other.m_collectionId),
       m_esource(other.m_esource),
       m_sourceType(other.m_sourceType)
 {
@@ -56,8 +56,7 @@ QOrganizerEDSCollectionEngineId::QOrganizerEDSCollectionEngineId(const QOrganize
 }
 
 QOrganizerEDSCollectionEngineId::QOrganizerEDSCollectionEngineId(const QString& idString)
-    : QOrganizerCollectionEngineId(),
-      m_esource(0)
+    : m_esource(0)
 {
     // separate engine id part, if full id given
     m_collectionId = idString.contains(":") ? idString.mid(idString.lastIndexOf(":")+1) : idString;
@@ -70,7 +69,7 @@ QOrganizerEDSCollectionEngineId::~QOrganizerEDSCollectionEngineId()
     }
 }
 
-bool QOrganizerEDSCollectionEngineId::isEqualTo(const QOrganizerCollectionEngineId* other) const
+bool QOrganizerEDSCollectionEngineId::isEqualTo(const QOrganizerEDSCollectionEngineId* other) const
 {
     // note: we don't need to check the managerUri because this function is not called
     // if the managerUris are different.
@@ -79,7 +78,7 @@ bool QOrganizerEDSCollectionEngineId::isEqualTo(const QOrganizerCollectionEngine
     return true;
 }
 
-bool QOrganizerEDSCollectionEngineId::isLessThan(const QOrganizerCollectionEngineId* other) const
+bool QOrganizerEDSCollectionEngineId::isLessThan(const QOrganizerEDSCollectionEngineId* other) const
 {
     // order by collection, then by item in collection.
     const QOrganizerEDSCollectionEngineId* otherPtr = static_cast<const QOrganizerEDSCollectionEngineId*>(other);
@@ -113,6 +112,28 @@ QDebug& QOrganizerEDSCollectionEngineId::debugStreamOut(QDebug& dbg) const
 {
     dbg.nospace() << "QOrganizerEDSCollectionEngineId(" << managerUri() << "," << m_collectionId << ")";
     return dbg.maybeSpace();
+}
+
+static inline QByteArray escapeColon(const QByteArray &param)
+{
+    QByteArray ret;
+    const int len = param.length();
+    ret.reserve(len + (len >> 3));
+    for (QByteArray::const_iterator it = param.begin(), end = param.end(); it != end; ++it) {
+        switch (*it) {
+            case ':':
+                ret += "&#58;";
+                break;
+            default:
+                ret += *it;
+                break;
+        }
+    }
+    return ret;
+}
+
+QByteArray QOrganizerEDSCollectionEngineId::toByteArray() const {
+    return (escapeColon(QByteArray().append(toString())));
 }
 
 

@@ -56,6 +56,8 @@ private:
     static void onObjectsAdded(ECalClientView *view, GSList *objects, ViewWatcher *self);
     static void onObjectsRemoved(ECalClientView *view, GSList *objects, ViewWatcher *self);
     static void onObjectsModified(ECalClientView *view, GSList *objects, ViewWatcher *self);
+
+    const QList<QOrganizerItemDetail::DetailType> &parseTypes(GSList *pList);
 };
 
 #endif

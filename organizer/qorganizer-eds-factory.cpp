@@ -13,13 +13,13 @@ QOrganizerManagerEngine* QOrganizerEDSFactory::engine(const QMap<QString, QStrin
     return QOrganizerEDSEngine::createEDSEngine(parameters);
 }
 
-QOrganizerItemEngineId* QOrganizerEDSFactory::createItemEngineId(const QMap<QString, QString>& parameters, const QString& idString) const
+QOrganizerEDSEngineId* QOrganizerEDSFactory::createItemEngineId(const QMap<QString, QString>& parameters, const QString& idString) const
 {
     Q_UNUSED(parameters);
     return new QOrganizerEDSEngineId(idString);
 }
 
-QOrganizerCollectionEngineId* QOrganizerEDSFactory::createCollectionEngineId(const QMap<QString, QString>& parameters, const QString& idString) const
+QOrganizerEDSCollectionEngineId* QOrganizerEDSFactory::createCollectionEngineId(const QMap<QString, QString>& parameters, const QString& idString) const
 {
     Q_UNUSED(parameters);
     return new QOrganizerEDSCollectionEngineId(idString);

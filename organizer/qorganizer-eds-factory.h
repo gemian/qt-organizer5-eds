@@ -21,8 +21,8 @@
 
 #include <qorganizermanagerenginefactory.h>
 #include <qorganizermanagerengine.h>
-#include <qorganizeritemengineid.h>
-#include <qorganizercollectionengineid.h>
+#include "qorganizer-eds-collection-engineid.h"
+#include "qorganizer-eds-engineid.h"
 
 class QOrganizerEDSFactory : public QtOrganizer::QOrganizerManagerEngineFactory
 {
@@ -31,8 +31,8 @@ class QOrganizerEDSFactory : public QtOrganizer::QOrganizerManagerEngineFactory
 
 public:
     QtOrganizer::QOrganizerManagerEngine* engine(const QMap<QString, QString>& parameters, QtOrganizer::QOrganizerManager::Error*);
-    QtOrganizer::QOrganizerItemEngineId* createItemEngineId(const QMap<QString, QString>& parameters, const QString& idString) const;
-    QtOrganizer::QOrganizerCollectionEngineId* createCollectionEngineId(const QMap<QString, QString>& parameters, const QString& idString) const;
+    QOrganizerEDSEngineId* createItemEngineId(const QMap<QString, QString>& parameters, const QString& idString) const;
+    QOrganizerEDSCollectionEngineId* createCollectionEngineId(const QMap<QString, QString>& parameters, const QString& idString) const;
     QString managerName() const;
 };
 

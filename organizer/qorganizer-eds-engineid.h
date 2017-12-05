@@ -19,14 +19,12 @@
 #ifndef __QORGANIZER_EDS_ENGINEID_H__
 #define __QORGANIZER_EDS_ENGINEID_H__
 
-#include "qorganizer-eds-collection-engineid.h"
 
-#include <QtOrganizer/QOrganizerItemEngineId>
-#include <QtOrganizer/QOrganizerItemId>
+#include <QtOrganizer>
 
 #include <libecal/libecal.h>
 
-class QOrganizerEDSEngineId : public QtOrganizer::QOrganizerItemEngineId
+class QOrganizerEDSEngineId : public QSharedData
 {
 public:
     QOrganizerEDSEngineId();
@@ -36,13 +34,14 @@ public:
     QOrganizerEDSEngineId(const QOrganizerEDSEngineId& other);
     QOrganizerEDSEngineId(const QString& idString);
 
-    bool isEqualTo(const QtOrganizer::QOrganizerItemEngineId* other) const;
-    bool isLessThan(const QtOrganizer::QOrganizerItemEngineId* other) const;
+    bool isEqualTo(const QOrganizerEDSEngineId* other) const;
+    bool isLessThan(const QOrganizerEDSEngineId* other) const;
 
     QString managerUri() const;
-    QtOrganizer::QOrganizerItemEngineId* clone() const;
+    QOrganizerEDSEngineId* clone() const;
 
     QString toString() const;
+    QByteArray toByteArray() const;
     uint hash() const;
 
 #ifndef QT_NO_DEBUG_STREAM
@@ -58,10 +57,12 @@ public:
                                                   ECalComponentId *id,
                                                   QOrganizerEDSEngineId **parentId);
 
+
 private:
     QString m_collectionId;
     QString m_itemId;
     friend class QOrganizerEDSEngine;
+
 };
 
 #endif
