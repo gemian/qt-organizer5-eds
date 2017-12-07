@@ -19,6 +19,15 @@ Pull out sources for qtpim:
 ```
 git clone git://code.qt.io/qt/qtpim.git
 ```
+
+Patch the files to cope with old qt (qmlWarning => qmlInfo):
+```
+src/imports/contacts/qdeclarativecontactrelationshipmodel.cpp
+src/imports/contacts/qdeclarativecontactrelationship.cpp
+src/imports/organizer/qdeclarativeorganizermodel.cpp
+src/imports/organizer/qdeclarativeorganizerrecurrencerule.cpp
+```
+
 Build qtpim:
 ```
 qmake qtpim.pro
