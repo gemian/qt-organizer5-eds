@@ -56,7 +56,7 @@ private Q_SLOTS:
         static QString displayLabelValue = QStringLiteral("Display Label %1");
         static QString descriptionValue = QStringLiteral("Description event %1");
 
-        // use this becaue EDS does not store msecs
+        // use this because EDS does not store msecs
         QTime currentTime = QTime::currentTime();
         QDateTime date = QDateTime(QDateTime::currentDateTime().date(), QTime(currentTime.hour(), currentTime.minute(), currentTime.second()));
         m_events.clear();

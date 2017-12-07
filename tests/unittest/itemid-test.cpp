@@ -65,7 +65,7 @@ private Q_SLOTS:
         QOrganizerItemId id2(engineId->managerUri(), engineId->toByteArray());
         QCOMPARE(id2.managerUri(), QStringLiteral("qtorganizer:eds:"));
         QString targetId = QString("qtorganizer:eds::") + id.toString();
-        QCOMPARE(id2.toString(), targetId);
+        QCOMPARE(id2.toByteArray(), targetId.toUtf8());
     }
 
 };
