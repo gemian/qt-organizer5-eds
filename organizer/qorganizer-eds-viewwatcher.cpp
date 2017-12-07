@@ -46,7 +46,6 @@ ViewWatcher::ViewWatcher(const QString &collectionId,
                           m_cancellable,
                           (GAsyncReadyCallback) ViewWatcher::viewReady,
                           this);
-    //qWarning() << "About to wait for collectionId: " << collectionId;
     if (client != nullptr) {
         wait();
     }
@@ -156,9 +155,9 @@ void ViewWatcher::onObjectsAdded(ECalClientView *view,
                                  ViewWatcher *self)
 {
     Q_UNUSED(view);
+
     QOrganizerItemChangeSet changeSet;
     changeSet.insertAddedItems(self->parseItemIds(objects));
-    qWarning() << "onObjectsAdded: " << changeSet.addedItems();
     self->m_engineData->emitSharedSignals(&changeSet);
 }
 
@@ -195,7 +194,6 @@ const QList<QOrganizerItemDetail::DetailType> ViewWatcher::parseTypes(GSList *ob
     QList<QOrganizerItemDetail::DetailType> result;
 
     for (GSList *l = objects; l; l = l->next) {
-        //qWarning() << "parseTypes" << l;
         result << QOrganizerItemDetail::DetailType::TypeEventTime;
     }
     return result;

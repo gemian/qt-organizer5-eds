@@ -87,7 +87,6 @@ QOrganizerEDSEngine::QOrganizerEDSEngine(QOrganizerEDSEngineData *data)
     d->m_sharedEngines << this;
 
     Q_FOREACH(const QString &collectionId, d->m_sourceRegistry->collectionsIds()){
-        qWarning() << "QOrganizerEDSEngine - onSourceAdded with CollectionId :" + collectionId;
         onSourceAdded(collectionId);
     }
     connect(d->m_sourceRegistry, SIGNAL(sourceAdded(QString)), SLOT(onSourceAdded(QString)));
@@ -593,11 +592,6 @@ void QOrganizerEDSEngine::saveItemsAsyncStart(SaveRequestData *data)
 
         if (collectionId.isEmpty() && createItems) {
             collectionId = QString(data->parent()->d->m_sourceRegistry->defaultCollection().id().localId());
-        }
-
-        qWarning() << "Saving items in collectionId: " << collectionId;
-        for (auto item : items) {
-            qWarning() << "localId: " << QString(item.id().localId());
         }
 
         EClient *client = data->parent()->d->m_sourceRegistry->client(collectionId);
@@ -1276,7 +1270,6 @@ int QOrganizerEDSEngine::runningRequestCount() const
 
 void QOrganizerEDSEngine::onSourceAdded(const QString &collectionId)
 {
-    qWarning() << "QOrganizerEDSEngine::onSourceAdded collId: " << collectionId;
     d->watch(collectionId);
     Q_EMIT collectionsAdded(QList<QOrganizerCollectionId>() << QOrganizerCollectionId::fromString(collectionId));
 }
@@ -2740,8 +2733,6 @@ void QOrganizerEDSEngine::parseId(const QOrganizerItem &item, ECalComponent *com
     if (!itemId.isNull()) {
         QString rId;
         QString cId = QOrganizerEDSEngineId::toComponentId(itemId, &rId);
-
-        qWarning() << "parsedId: "<< cId;
 
         e_cal_component_set_uid(comp, cId.toUtf8().data());
 

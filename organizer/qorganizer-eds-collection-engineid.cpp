@@ -24,10 +24,8 @@
 QOrganizerEDSCollectionEngineId::QOrganizerEDSCollectionEngineId(ESource *source)
     : m_esource(source)
 {
-//    qWarning() << "QOrganizerEDSCollectionEngineId: " << source;
     g_object_ref(m_esource);
     m_collectionId = QString::fromUtf8(e_source_get_uid(m_esource));
-//    qWarning() << "QOrganizerEDSCollectionEngineId cId: " << m_collectionId;
     if (e_source_has_extension(m_esource, E_SOURCE_EXTENSION_CALENDAR)) {
         m_sourceType = E_CAL_CLIENT_SOURCE_TYPE_EVENTS;
     } else if (e_source_has_extension(m_esource, E_SOURCE_EXTENSION_TASK_LIST)) {
@@ -115,9 +113,8 @@ QDebug& QOrganizerEDSCollectionEngineId::debugStreamOut(QDebug& dbg) const
 }
 
 QByteArray QOrganizerEDSCollectionEngineId::toByteArray() const {
-    return (QByteArray().append(toString()));
+    return QByteArray().append(toString());
 }
-
 
 #endif
 
