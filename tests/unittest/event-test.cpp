@@ -473,7 +473,7 @@ private Q_SLOTS:
         QOrganizerEDSCollectionEngineId *edsCollectionId = new QOrganizerEDSCollectionEngineId("XXXXXX");
         QOrganizerCollectionId cid(edsCollectionId->managerUri(), edsCollectionId->toByteArray());
         QVERIFY(!cid.isNull());
-        QCOMPARE(cid.toString(), QStringLiteral("qtorganizer:eds::XXXXXX"));
+        QCOMPARE(QString(cid.localId()), QStringLiteral("qtorganizer:eds::XXXXXX"));
         ev.setCollectionId(cid);
         ev.setStartDateTime(QDateTime(QDate(2013, 10, 2), QTime(0,30,0)));
         ev.setDisplayLabel(displayLabelValue.arg(2));
@@ -595,23 +595,31 @@ private Q_SLOTS:
         QMap<int, QtOrganizer::QOrganizerManager::Error> errorMap;
         QList<QOrganizerItem> items;
         items << event;
+        qWarning() << "Saving initally with id: "<<QString(event.id().localId());
         bool saveResult = m_engine->saveItems(&items,
                                             QList<QtOrganizer::QOrganizerItemDetail::DetailType>(),
                                             &errorMap,
                                             &error);
         QVERIFY(saveResult);
 
+        qWarning() << "Saved with id: "<<QString(event.id().localId());
+        qWarning() << "Saved in items with id: "<<QString(items[0].id().localId());
+
         QOrganizerEvent eventResult = static_cast<QOrganizerEvent>(items[0]);
         eventResult.setDescription(QStringLiteral("New description"));
         items.clear();
         items << eventResult;
+        qWarning() << "items count: "<<items.size();
+        qWarning() << "Saving updated with id: "<<QString(eventResult.id().localId());
         saveResult = m_engine->saveItems(&items,
                                          QList<QtOrganizer::QOrganizerItemDetail::DetailType>(),
                                          &errorMap,
                                          &error);
+        qWarning() << "items count: "<<items.size();
 
         QOrganizerItemFetchHint hint;
         QList<QOrganizerItemId> ids;
+        qWarning() << "items count: "<<items.size();
         ids << items[0].id();
         items = m_engine->items(ids, hint, &errorMap, &error);
         QCOMPARE(items.count(), 1);

@@ -77,7 +77,7 @@ void EDSBaseTest::cleanup()
 QString EDSBaseTest::getEventFromEvolution(const QOrganizerItemId &id,
                                            const QOrganizerCollectionId &collectionId)
 {
-    QString uid = id.toString().split("/").last();
+    QString uid = QString(id.localId()).split("/").last();
     GError *error = 0;
     GScopedPointer<ESourceRegistry> sourceRegistry(e_source_registry_new_sync(0, &error));
     if (error) {
@@ -90,7 +90,7 @@ QString EDSBaseTest::getEventFromEvolution(const QOrganizerItemId &id,
         calendar.reset(e_source_registry_ref_default_calendar(sourceRegistry.data()));
     } else {
         calendar.reset(e_source_registry_ref_source(sourceRegistry.data(),
-                                                    collectionId.toString().toUtf8().data()));
+                                                    QString(collectionId.localId()).toUtf8().data()));
     }
     GScopedPointer<EClient> client(E_CAL_CLIENT_CONNECT_SYNC(calendar.data(),
                                                              E_CAL_CLIENT_SOURCE_TYPE_EVENTS,

@@ -114,26 +114,8 @@ QDebug& QOrganizerEDSCollectionEngineId::debugStreamOut(QDebug& dbg) const
     return dbg.maybeSpace();
 }
 
-static inline QByteArray escapeColon(const QByteArray &param)
-{
-    QByteArray ret;
-    const int len = param.length();
-    ret.reserve(len + (len >> 3));
-    for (QByteArray::const_iterator it = param.begin(), end = param.end(); it != end; ++it) {
-        switch (*it) {
-            case ':':
-                ret += "&#58;";
-                break;
-            default:
-                ret += *it;
-                break;
-        }
-    }
-    return ret;
-}
-
 QByteArray QOrganizerEDSCollectionEngineId::toByteArray() const {
-    return (escapeColon(QByteArray().append(toString())));
+    return (QByteArray().append(toString()));
 }
 
 

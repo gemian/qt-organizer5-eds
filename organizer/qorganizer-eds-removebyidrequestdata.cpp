@@ -31,7 +31,7 @@ RemoveByIdRequestData::RemoveByIdRequestData(QOrganizerEDSEngine *engine, QtOrga
       m_currentCompIds(0)
 {
     Q_FOREACH(const QOrganizerItemId &id, request<QOrganizerItemRemoveByIdRequest>()->itemIds()) {
-        QString strId = id.toString();
+        QString strId = QString(id.localId());
         QString collectionId;
         if (strId.contains("/")) {
             collectionId = strId.split("/").first();

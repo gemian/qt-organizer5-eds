@@ -291,7 +291,7 @@ QStringList FetchRequestData::collectionsFromFilter(const QOrganizerItemFilter &
     {
         QOrganizerItemCollectionFilter cf = static_cast<QOrganizerItemCollectionFilter>(f);
         Q_FOREACH(const QOrganizerCollectionId &id, cf.collectionIds()) {
-            result << id.toString();
+            result << QString(id.localId());
         }
         break;
     }

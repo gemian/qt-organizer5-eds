@@ -120,7 +120,7 @@ QString QOrganizerEDSEngineId::managerUriStatic()
 
 QString QOrganizerEDSEngineId::toComponentId(const QtOrganizer::QOrganizerItemId &itemId, QString *rid)
 {
-    return toComponentId(itemId.toString(), rid);
+    return toComponentId(QString(itemId.localId()), rid);
 }
 
 QString QOrganizerEDSEngineId::toComponentId(const QString &itemId, QString *rid)

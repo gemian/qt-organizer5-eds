@@ -29,8 +29,8 @@ public:
                          QtOrganizer::QOrganizerAbstractRequest *req);
     ~FetchByIdRequestData();
 
-    QString nextId();
-    QString currentId() const;
+    QOrganizerItemId nextId();
+    QOrganizerItemId currentId() const;
     QString currentCollectionId() const;
     bool end() const;
 

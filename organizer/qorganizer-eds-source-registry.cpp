@@ -116,7 +116,7 @@ void SourceRegistry::setDefaultCollection(QtOrganizer::QOrganizerCollection &col
         return;
 
     updateDefaultCollection(&collection);
-    QString edsId = m_defaultCollection.id().toString().split(":").last();
+    QString edsId = QString(m_defaultCollection.id().localId()).split(":").last();
     m_settings.setValue(DEFAULT_COLLECTION_SETTINGS, edsId);
 }
 
@@ -179,6 +179,7 @@ void SourceRegistry::remove(const QString &collectionId)
         Q_EMIT sourceRemoved(collectionId);
         m_collectionsMap.remove(collectionId);
         g_object_unref(m_sources.take(collectionId));
+        qWarning() << "SourceRegistry::remove collId: "<<collectionId;
         EClient *client = m_clients.take(collectionId);
         if (client) {
             g_object_unref(client);
@@ -186,7 +187,7 @@ void SourceRegistry::remove(const QString &collectionId)
     }
 
     // update default collection if necessary
-    if (m_defaultCollection.id().toString() == collectionId) {
+    if (QString(m_defaultCollection.id().localId()) == collectionId) {
         m_defaultCollection = QOrganizerCollection();
         setDefaultCollection(m_collections.first());
     }
@@ -195,11 +196,12 @@ void SourceRegistry::remove(const QString &collectionId)
 EClient* SourceRegistry::client(const QString &collectionId)
 {
     if (collectionId.isEmpty()) {
-        //qWarning() << "No CollectionId requested";
+        qWarning() << "No CollectionId requested";
         return 0;
     }
 
     EClient *client = m_clients.value(collectionId, 0);
+    qWarning() << "SourceRegistry::client checkfor collId: " << collectionId << ", client: " << client;
     if (!client) {
         QOrganizerEDSCollectionEngineId *eid = m_collectionsMap[collectionId];
         if (eid) {
@@ -216,6 +218,7 @@ EClient* SourceRegistry::client(const QString &collectionId)
                     c.setExtendedMetaData(COLLECTION_READONLY_METADATA, true);
                     Q_EMIT sourceUpdated(collectionId);
                 }
+                qWarning() << "SourceRegistery::client insert collId: " << collectionId << ", client: " << client;
                 m_clients.insert(collectionId, client);
             }
         }
@@ -269,9 +272,9 @@ QOrganizerCollection SourceRegistry::registerSource(ESource *source, bool isDefa
             QOrganizerEDSCollectionEngineId *edsId = 0;
             QOrganizerCollection collection = parseSource(source, isDefault, &edsId);
             QOrganizerCollectionId id = collection.id();
-            QString collectionId = id.toString();
+            QString collectionId = QString(id.localId());
 
-            //qWarning() << "SourceRegistry::registerSource enabled: "<<isEnabled<< ", or cal/tsk/mem/alm colId: " << collectionId;
+            qWarning() << "SourceRegistry::registerSource enabled: "<<isEnabled<< ", collectionId: " << collectionId;
 
             if (!m_collectionsMap.contains(collectionId)) {
                 m_collections.insert(collectionId, collection);
@@ -296,11 +299,11 @@ QOrganizerCollection SourceRegistry::registerSource(ESource *source, bool isDefa
 void SourceRegistry::updateDefaultCollection(QOrganizerCollection *collection)
 {
     if (m_defaultCollection.id() != collection->id()) {
-        QString oldDefaultCollectionId = m_defaultCollection.id().toString();
+        QString oldDefaultCollectionId = QString(m_defaultCollection.id().localId());
 
         collection->setExtendedMetaData(COLLECTION_DEFAULT_METADATA, true);
         m_defaultCollection = *collection;
-        Q_EMIT sourceUpdated(m_defaultCollection.id().toString());
+        Q_EMIT sourceUpdated(QString(m_defaultCollection.id().localId()));
 
         if (m_collections.contains(oldDefaultCollectionId)) {
             QOrganizerCollection &old = m_collections[oldDefaultCollectionId];
@@ -337,7 +340,7 @@ QByteArray SourceRegistry::defaultCollectionId() const
     ESource *defaultCalendarSource = e_source_registry_ref_default_calendar(m_sourceRegistry);
     QString eId = QString::fromUtf8(e_source_get_uid(defaultCalendarSource));
     g_object_unref(defaultCalendarSource);
-    //qWarning() << "defaultCollectionId: " << eId;
+    qWarning() << "defaultCollectionId: " << eId;
     return eId.toUtf8();
 }
 
@@ -345,7 +348,7 @@ void SourceRegistry::onSourceAdded(ESourceRegistry *registry,
                                    ESource *source,
                                    SourceRegistry *self)
 {
-    //qWarning() << "SourceRegistry::onSourceAdded r: " << registry << ", s: " << source;
+    qWarning() << "SourceRegistry::onSourceAdded r: " << registry << ", s: " << source;
     Q_UNUSED(registry);
     self->insert(source);
 }
@@ -358,6 +361,7 @@ void SourceRegistry::onSourceChanged(ESourceRegistry *registry,
     QString collectionId = self->findCollection(source);
     if (!collectionId.isEmpty() && self->m_collections.contains(collectionId)) {
         QOrganizerCollection &collection = self->m_collections[collectionId];
+        qWarning() << "SourceRegistry::onSourceChanged collId: "<< collectionId;
         self->updateCollection(&collection,
                                self->m_defaultCollection.id() == collection.id(),
                                source, self->m_clients.value(collectionId));

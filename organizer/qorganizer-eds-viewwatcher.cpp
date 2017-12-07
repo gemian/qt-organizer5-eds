@@ -156,9 +156,9 @@ void ViewWatcher::onObjectsAdded(ECalClientView *view,
                                  ViewWatcher *self)
 {
     Q_UNUSED(view);
-
     QOrganizerItemChangeSet changeSet;
     changeSet.insertAddedItems(self->parseItemIds(objects));
+    qWarning() << "onObjectsAdded: " << changeSet.addedItems();
     self->m_engineData->emitSharedSignals(&changeSet);
 }
 
@@ -191,7 +191,7 @@ void ViewWatcher::onObjectsModified(ECalClientView *view,
     self->m_engineData->emitSharedSignals(&changeSet);
 }
 
-const QList<QOrganizerItemDetail::DetailType> &ViewWatcher::parseTypes(GSList *objects) {
+const QList<QOrganizerItemDetail::DetailType> ViewWatcher::parseTypes(GSList *objects) {
     QList<QOrganizerItemDetail::DetailType> result;
 
     for (GSList *l = objects; l; l = l->next) {

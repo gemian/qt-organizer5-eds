@@ -32,7 +32,7 @@ SaveRequestData::SaveRequestData(QOrganizerEDSEngine *engine,
 {
     // map items by collection
     Q_FOREACH(const QOrganizerItem &i, request<QOrganizerItemSaveRequest>()->items()) {
-        QString collectionId = i.collectionId().toString();
+        QString collectionId = QString(i.collectionId().localId());
         if (collectionId == QStringLiteral("qtorganizer:::"))  {
             collectionId = QStringLiteral("");
         }
@@ -49,7 +49,9 @@ SaveRequestData::~SaveRequestData()
 void SaveRequestData::finish(QtOrganizer::QOrganizerManager::Error error,
                              QtOrganizer::QOrganizerAbstractRequest::State state)
 {
-    e_client_refresh_sync(m_client, 0, 0);
+    if (m_client != nullptr) {
+        e_client_refresh_sync(m_client, 0, 0);
+    }
     QOrganizerManagerEngine::updateItemSaveRequest(request<QOrganizerItemSaveRequest>(),
                                                    m_result,
                                                    error,

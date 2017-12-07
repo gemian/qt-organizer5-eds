@@ -172,7 +172,7 @@ void SaveCollectionRequestData::parseCollections()
             }
             e_source_set_parent(source, "local-stub");
         } else {
-            source = m_parent->d->m_sourceRegistry->source(collection.id().toString());
+            source = m_parent->d->m_sourceRegistry->source(QString(collection.id().localId()));
             isNew = false;
         }
 

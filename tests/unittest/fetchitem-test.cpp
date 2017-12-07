@@ -147,7 +147,11 @@ private Q_SLOTS:
 
         // id does not exists
         request.clear();
-        request << QOrganizerItemId::fromString("qtorganizer:eds::1386099272.14397.0@organizer/20131203T193432Z-14397-1000-14367-9@organizer");
+        QOrganizerItemId itemId = QOrganizerItemId::fromString("qtorganizer:eds::1386099272.14397.0@organizer/20131203T193432Z-14397-1000-14367-9@organizer");
+        request << itemId;
+
+        qWarning() << "itemId: " << itemId;
+        qWarning() << "itemId manager: " << itemId.managerUri() << ", local: "<< QString(itemId.localId());
 
         QOrganizerItemFetchByIdRequest reqNotFound;
         reqNotFound.setIds(request);

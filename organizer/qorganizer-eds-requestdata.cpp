@@ -148,6 +148,8 @@ void RequestData::finish(QOrganizerManager::Error error,
 
 void RequestData::setClient(EClient *client)
 {
+    qWarning() << "RequestDate setClient " << client;
+
     if (m_client == client) {
         return;
     }
