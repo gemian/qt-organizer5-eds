@@ -1480,7 +1480,7 @@ void QOrganizerEDSEngine::parseYearRecurrence(struct icalrecurrencetype *rule, Q
 
 void QOrganizerEDSEngine::parseRecurrence(ECalComponent *comp, QOrganizerItem *item)
 {
-    // recurence
+    // recurrence
     if (e_cal_component_has_rdates(comp)) {
         QSet<QDate> dates;
         GSList *periodList = 0;
@@ -1520,6 +1520,7 @@ void QOrganizerEDSEngine::parseRecurrence(ECalComponent *comp, QOrganizerItem *i
     GSList *ruleList = 0;
     e_cal_component_get_rrule_list(comp, &ruleList);
     if (ruleList) {
+
         QSet<QOrganizerRecurrenceRule> qRules;
 
         for(GSList *i = ruleList; i != 0; i = i->next) {
@@ -1737,12 +1738,7 @@ void QOrganizerEDSEngine::parseExtendedDetails(ECalComponent *comp, QOrganizerIt
 QOrganizerItem *QOrganizerEDSEngine::parseEvent(ECalComponent *comp,
                                                 QList<QOrganizerItemDetail::DetailType> detailsHint)
 {
-    QOrganizerItem *event;
-    if (hasRecurrence(comp)) {
-        event = new QOrganizerEventOccurrence();
-    } else {
-        event = new QOrganizerEvent();
-    }
+    QOrganizerItem *event = new QOrganizerEvent();
     if (detailsHint.isEmpty() ||
         detailsHint.contains(QOrganizerItemDetail::TypeEventTime)) {
         parseStartTime(comp, event);
