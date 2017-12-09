@@ -49,6 +49,8 @@ ViewWatcher::ViewWatcher(const QString &collectionId,
     if (client != nullptr) {
         wait();
     }
+    m_dirty.setSingleShot(true);
+    connect(&m_dirty, SIGNAL(timeout()), SLOT(flush()));
 }
 
 ViewWatcher::~ViewWatcher()
@@ -110,7 +112,12 @@ void ViewWatcher::clear()
     }
 
     if (m_eView) {
-        e_cal_client_view_stop(m_eView, 0);
+        GError *gErr = 0;
+        e_cal_client_view_stop(m_eView, &gErr);
+        if (gErr) {
+            qWarning() << "Fail to stop view" << gErr->message;
+            g_error_free(gErr);
+        }
         g_clear_object(&m_eView);
     }
 
@@ -150,15 +157,24 @@ QList<QOrganizerItemId> ViewWatcher::parseItemIds(GSList *objects)
     return result;
 }
 
+void ViewWatcher::notify()
+{
+    m_dirty.start(500);
+}
+
+void ViewWatcher::flush()
+{
+    m_engineData->emitSharedSignals(&m_changeSet);
+    m_changeSet.clearAll();
+}
+
 void ViewWatcher::onObjectsAdded(ECalClientView *view,
                                  GSList *objects,
                                  ViewWatcher *self)
 {
     Q_UNUSED(view);
-
-    QOrganizerItemChangeSet changeSet;
-    changeSet.insertAddedItems(self->parseItemIds(objects));
-    self->m_engineData->emitSharedSignals(&changeSet);
+    self->m_changeSet.insertAddedItems(self->parseItemIds(objects));
+    self->notify();
 }
 
 void ViewWatcher::onObjectsRemoved(ECalClientView *view,
@@ -166,16 +182,14 @@ void ViewWatcher::onObjectsRemoved(ECalClientView *view,
                                    ViewWatcher *self)
 {
     Q_UNUSED(view);
-    QOrganizerItemChangeSet changeSet;
 
     for (GSList *l = objects; l; l = l->next) {
         ECalComponentId *id = static_cast<ECalComponentId*>(l->data);
         QOrganizerEDSEngineId *itemId = new QOrganizerEDSEngineId(self->m_collectionId,
                                                                   QString::fromUtf8(id->uid));
-        changeSet.insertRemovedItem(QOrganizerItemId(itemId->managerUri(), itemId->toByteArray()));
+        self->m_changeSet.insertRemovedItem(QOrganizerItemId(itemId->managerUri(), itemId->toByteArray()));
     }
-
-    self->m_engineData->emitSharedSignals(&changeSet);
+    self->notify();
 }
 
 void ViewWatcher::onObjectsModified(ECalClientView *view,
@@ -184,16 +198,15 @@ void ViewWatcher::onObjectsModified(ECalClientView *view,
 {
     Q_UNUSED(view);
 
-    QOrganizerItemChangeSet changeSet;
-    changeSet.insertChangedItems(self->parseItemIds(objects), self->parseTypes(objects));
-
-    self->m_engineData->emitSharedSignals(&changeSet);
+    self->m_changeSet.insertChangedItems(self->parseItemIds(objects), self->parseTypes(objects));
+    self->notify();
 }
 
-const QList<QOrganizerItemDetail::DetailType> ViewWatcher::parseTypes(GSList *objects) {
+const QList<QOrganizerItemDetail::DetailType> &ViewWatcher::parseTypes(GSList *objects) {
     QList<QOrganizerItemDetail::DetailType> result;
 
     for (GSList *l = objects; l; l = l->next) {
+        //qWarning() << "parseTypes" << l;
         result << QOrganizerItemDetail::DetailType::TypeEventTime;
     }
     return result;

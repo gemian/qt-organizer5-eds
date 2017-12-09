@@ -19,6 +19,7 @@
 #include "config.h"
 #include "eds-base-test.h"
 #include "qorganizer-eds-engine.h"
+#include "gscopedpointer.h"
 
 #include <QtCore>
 #include <QtTest>
@@ -27,25 +28,6 @@
 
 using namespace QtOrganizer;
 
-class GScopedPointerUnref
-{
-public:
-    static inline void cleanup(void *pointer)
-    {
-        if (pointer) {
-            g_clear_object(&pointer);
-        }
-    }
-};
-
-template<class KLASS>
-class GScopedPointer : public QScopedPointer<KLASS, GScopedPointerUnref>
-{
-public:
-    GScopedPointer(KLASS* obj = 0)
-        : QScopedPointer<KLASS, GScopedPointerUnref>(obj)
-    {}
-};
 
 EDSBaseTest::EDSBaseTest()
 {
@@ -103,8 +85,20 @@ QString EDSBaseTest::getEventFromEvolution(const QOrganizerItemId &id,
     }
 
     icalcomponent *obj = 0;
+    
+	QString ruid;
+
+    // recurrence id
+    if (uid.contains("#")) {
+        QStringList ids = uid.split("#");
+        uid = ids[0];
+        ruid = ids[1];
+    }
+
     e_cal_client_get_object_sync(reinterpret_cast<ECalClient*>(client.data()),
-                                 uid.toUtf8().data(), 0, &obj, 0, &error);
+                                 uid.toUtf8().data(),
+                                 ruid.toUtf8().data(),
+                                 &obj, 0, &error);
     if (error) {
         qWarning() << "Fail to retrieve object:" << error->message;
         g_error_free(error);

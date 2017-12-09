@@ -197,8 +197,7 @@ private Q_SLOTS:
         QTRY_COMPARE(collectionCreated.count(), 1);
 
         // wait for the collection to became writable
-        QVariant metaData = collection.extendedMetaData(QStringLiteral(COLLECTION_READONLY_METADATA));
-        QTRY_COMPARE_WITH_TIMEOUT(metaData.toBool(), true, 10000);
+        QTRY_COMPARE_WITH_TIMEOUT(collection.extendedMetaData(QStringLiteral(COLLECTION_READONLY_METADATA)).toBool(), true, 10000);
 
         // Check if the collection was stored correct
         QOrganizerCollection newCollection = m_engineRead->collection(collection.id(), &error);
@@ -219,6 +218,7 @@ private Q_SLOTS:
         QTRY_VERIFY(updateCollection.count() > 0);
         QList<QVariant> args = updateCollection.takeFirst();
         QCOMPARE(args.count(), 1);
+        QCOMPARE(args[0].value<QList<QOrganizerCollectionId> >().count(), 1);
         QCOMPARE(args[0].value<QList<QOrganizerCollectionId> >().at(0).toString(), collection.id().toString());
 
 

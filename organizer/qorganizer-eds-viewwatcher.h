@@ -24,6 +24,7 @@
 #include <QtCore/QList>
 #include <QtCore/QObject>
 #include <QtCore/QEventLoop>
+#include <QtCore/QTimer>
 
 #include <libecal/libecal.h>
 
@@ -40,6 +41,9 @@ public:
     void clear();
     void wait();
 
+private Q_SLOTS:
+    void flush();
+
 private:
     QString m_collectionId;
     QOrganizerEDSEngineData *m_engineData;
@@ -47,8 +51,11 @@ private:
     ECalClient *m_eClient;
     ECalClientView *m_eView;
     QEventLoop *m_eventLoop;
+    QOrganizerItemChangeSet m_changeSet;
+    QTimer m_dirty;
 
     QList<QtOrganizer::QOrganizerItemId> parseItemIds(GSList *objects);
+    void notify();
 
     static void clientConnected(GObject *sourceObject, GAsyncResult *res, ViewWatcher *self);
     static void viewReady(GObject *sourceObject, GAsyncResult *res, ViewWatcher *self);
@@ -57,7 +64,7 @@ private:
     static void onObjectsRemoved(ECalClientView *view, GSList *objects, ViewWatcher *self);
     static void onObjectsModified(ECalClientView *view, GSList *objects, ViewWatcher *self);
 
-    const QList<QOrganizerItemDetail::DetailType> parseTypes(GSList *pList);
+    const QList<QOrganizerItemDetail::DetailType> &parseTypes(GSList *pList);
 };
 
 #endif

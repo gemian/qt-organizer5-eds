@@ -271,10 +271,12 @@ void QOrganizerEDSEngine::itemsAsyncListedAsComps(GObject *source,
     // check if request was destroyed by the caller
     if (data->isLive()) {
         QOrganizerItemFetchRequest *req = data->request<QOrganizerItemFetchRequest>();
-        data->appendResults(data->parent()->parseEvents(data->collection(),
-                                                        events,
-                                                        false,
-                                                        req->fetchHint().detailTypesHint()));
+        if (req) {
+            data->appendResults(data->parent()->parseEvents(data->collection(),
+                                                            events,
+                                                            false,
+                                                            req->fetchHint().detailTypesHint()));
+        }
         itemsAsyncStart(data);
     } else {
         releaseRequestData(data);
@@ -815,6 +817,7 @@ void QOrganizerEDSEngine::removeItemsAsyncStart(RemoveRequestData *data)
     QOrganizerCollectionId collection = data->next();
     for(; !collection.isNull(); collection = data->next()) {
         EClient *client = data->parent()->d->m_sourceRegistry->client(QString(collection.localId()));
+        Q_ASSERT(client);
         data->setClient(client);
         g_object_unref(client);
         GSList *ids = data->compIds();
@@ -1271,18 +1274,35 @@ int QOrganizerEDSEngine::runningRequestCount() const
 void QOrganizerEDSEngine::onSourceAdded(const QString &collectionId)
 {
     d->watch(collectionId);
-    Q_EMIT collectionsAdded(QList<QOrganizerCollectionId>() << QOrganizerCollectionId::fromString(collectionId));
+    QOrganizerCollectionId id = QOrganizerCollectionId::fromString(collectionId);
+
+    Q_EMIT collectionsAdded(QList<QOrganizerCollectionId>() << id);
+
+    QList<QPair<QOrganizerCollectionId, QOrganizerManager::Operation> > ops;
+    ops << qMakePair(id, QOrganizerManager::Add);
+    Q_EMIT collectionsModified(ops);
 }
 
 void QOrganizerEDSEngine::onSourceRemoved(const QString &collectionId)
 {
     d->unWatch(collectionId);
-    Q_EMIT collectionsRemoved(QList<QOrganizerCollectionId>() << QOrganizerCollectionId::fromString(collectionId));
+    QOrganizerCollectionId id = QOrganizerCollectionId::fromString(collectionId);
+
+    Q_EMIT collectionsRemoved(QList<QOrganizerCollectionId>() << id);
+
+    QList<QPair<QOrganizerCollectionId, QOrganizerManager::Operation> > ops;
+    ops << qMakePair(id, QOrganizerManager::Remove);
+    Q_EMIT collectionsModified(ops);
 }
 
 void QOrganizerEDSEngine::onSourceUpdated(const QString &collectionId)
 {
-    Q_EMIT collectionsChanged(QList<QOrganizerCollectionId>() << QOrganizerCollectionId::fromString(collectionId));
+    QOrganizerCollectionId id = QOrganizerCollectionId::fromString(collectionId);
+    Q_EMIT collectionsChanged(QList<QOrganizerCollectionId>() << id);
+
+    QList<QPair<QOrganizerCollectionId, QOrganizerManager::Operation> > ops;
+    ops << qMakePair(id, QOrganizerManager::Change);
+    Q_EMIT collectionsModified(ops);
 }
 
 void QOrganizerEDSEngine::onViewChanged(QOrganizerItemChangeSet *change)
@@ -1315,12 +1335,12 @@ QDateTime QOrganizerEDSEngine::fromIcalTime(struct icaltimetype value, const cha
         return QDateTime::fromTime_t(tmTime, qTz);
     } else {
         tmTime = icaltime_as_timet(value);
-        QDateTime t = QDateTime::fromTime_t(tmTime).toUTC();
-        // all day or floating time events will be saved with invalid timezone
+        QDateTime t = QDateTime::fromTime_t(tmTime, Qt::UTC);
+        // all day events will set as local time
+        // floating time events will be set with invalid time zone
         return QDateTime(t.date(),
-                         // if the event is all day event save with emtpy time
-                         (allDayEvent ? QTime() : t.time()),
-                         QTimeZone());
+                         (allDayEvent ? QTime(0,0,0) : t.time()),
+                         (allDayEvent ? QTimeZone(QTimeZone::systemTimeZoneId()) : QTimeZone()));
     }
 }
 
@@ -1361,10 +1381,11 @@ icaltimetype QOrganizerEDSEngine::fromQDateTime(const QDateTime &dateTime,
         *tzId = QByteArray(icaltimezone_get_tzid(timezone));
         return icaltime_from_timet_with_zone(finalDate.toTime_t(), allDay, timezone);
     } else {
-        if (!finalDate.isValid()) {
-            finalDate = QDateTime(finalDate.date(),
-                                  allDay || !finalDate.time().isValid() ? QTime(0, 0, 0) : finalDate.time());
-        }
+        bool invalidTime = allDay || !finalDate.time().isValid();
+        finalDate = QDateTime(finalDate.date(),
+                              invalidTime ? QTime(0, 0, 0) : finalDate.time(),
+                              Qt::UTC);
+
         *tzId = "";
         return icaltime_from_timet(finalDate.toTime_t(), allDay);
     }
@@ -1383,6 +1404,7 @@ void QOrganizerEDSEngine::parseStartTime(ECalComponent *comp, QOrganizerItem *it
         item->saveDetail(&etr);
     }
     e_cal_component_free_datetime(dt);
+    g_free(dt);
 }
 
 void QOrganizerEDSEngine::parseTodoStartTime(ECalComponent *comp, QOrganizerItem *item)
@@ -1398,6 +1420,7 @@ void QOrganizerEDSEngine::parseTodoStartTime(ECalComponent *comp, QOrganizerItem
         item->saveDetail(&etr);
     }
     e_cal_component_free_datetime(dt);
+    g_free(dt);
 }
 
 void QOrganizerEDSEngine::parseEndTime(ECalComponent *comp, QOrganizerItem *item)
@@ -1413,6 +1436,7 @@ void QOrganizerEDSEngine::parseEndTime(ECalComponent *comp, QOrganizerItem *item
         item->saveDetail(&etr);
     }
     e_cal_component_free_datetime(dt);
+    g_free(dt);
 }
 
 void QOrganizerEDSEngine::parseWeekRecurrence(struct icalrecurrencetype *rule, QtOrganizer::QOrganizerRecurrenceRule *qRule)
@@ -1738,7 +1762,12 @@ void QOrganizerEDSEngine::parseExtendedDetails(ECalComponent *comp, QOrganizerIt
 QOrganizerItem *QOrganizerEDSEngine::parseEvent(ECalComponent *comp,
                                                 QList<QOrganizerItemDetail::DetailType> detailsHint)
 {
-    QOrganizerItem *event = new QOrganizerEvent();
+    QOrganizerItem *event;
+    if (hasRecurrence(comp)) {
+        event = new QOrganizerEventOccurrence();
+    } else {
+        event = new QOrganizerEvent();
+    }
     if (detailsHint.isEmpty() ||
         detailsHint.contains(QOrganizerItemDetail::TypeEventTime)) {
         parseStartTime(comp, event);
@@ -1947,24 +1976,40 @@ void QOrganizerEDSEngine::parseReminders(ECalComponent *comp,
         ECalComponentAlarmTrigger trigger;
         e_cal_component_alarm_get_trigger(alarm.data(), &trigger);
         int relSecs = 0;
+        bool fail = false;
         if (trigger.type == E_CAL_COMPONENT_ALARM_TRIGGER_RELATIVE_START) {
+
             relSecs = - icaldurationtype_as_int(trigger.u.rel_duration);
             if (relSecs < 0) {
+                //WORKAROUND: Print warning only once, avoid flood application output
+                static bool relativeStartwarningPrinted = false;
                 relSecs = 0;
-                qWarning() << "QOrganizer does not support triggers after event start";
+                if (!relativeStartwarningPrinted) {
+                    fail = true;
+                    relativeStartwarningPrinted = true;
+                    qWarning() << "QOrganizer does not support triggers after event start";
+                }
             }
         } else if (trigger.type != E_CAL_COMPONENT_ALARM_TRIGGER_NONE) {
-            qWarning() << "QOrganizer only supports triggers relative to event start.";
+            fail = true;
+            //WORKAROUND: Print warning only once, avoid flood application output
+            static bool warningPrinted = false;
+            if (!warningPrinted) {
+                qWarning() << "QOrganizer only supports triggers relative to event start.:" << trigger.type;
+                warningPrinted = true;
+            }
         }
-        aDetail->setSecondsBeforeStart(relSecs);
 
-        ECalComponentAlarmRepeat aRepeat;
-        e_cal_component_alarm_get_repeat(alarm.data(), &aRepeat);
-        aDetail->setRepetition(aRepeat.repetitions, icaldurationtype_as_int(aRepeat.duration));
-
-        item->saveDetail(aDetail);
+        if (!fail) {
+            aDetail->setSecondsBeforeStart(relSecs);
+            ECalComponentAlarmRepeat aRepeat;
+            e_cal_component_alarm_get_repeat(alarm.data(), &aRepeat);
+            aDetail->setRepetition(aRepeat.repetitions, icaldurationtype_as_int(aRepeat.duration));
+            item->saveDetail(aDetail);
+        }
         delete aDetail;
     }
+    cal_obj_uid_list_free(alarms);
 }
 
 void QOrganizerEDSEngine::parseEventsAsync(const QMap<QString, GSList *> &events,
@@ -1976,7 +2021,15 @@ void QOrganizerEDSEngine::parseEventsAsync(const QMap<QString, GSList *> &events
     QMap<QOrganizerEDSCollectionEngineId*, GSList*> request;
     Q_FOREACH(const QString &collectionId, events.keys()) {
         QOrganizerEDSCollectionEngineId *collection = d->m_sourceRegistry->collectionEngineId(collectionId);
-        request.insert(collection, events.value(collectionId));
+        if (isIcalEvents) {
+            request.insert(collection,
+                           g_slist_copy_deep(events.value(collectionId),
+                                             (GCopyFunc) icalcomponent_new_clone, NULL));
+        } else {
+            request.insert(collection,
+                           g_slist_copy_deep(events.value(collectionId),
+                                             (GCopyFunc) g_object_ref, NULL));
+        }
     }
 
     // the thread will destroy itself when done
@@ -2250,7 +2303,11 @@ void QOrganizerEDSEngine::parseRecurrence(const QOrganizerItem &item, ECalCompon
             switch (qRule.limitType()) {
             case QOrganizerRecurrenceRule::DateLimit:
                 if (qRule.limitDate().isValid()) {
-                    rule->until = icaltime_from_timet(QDateTime(qRule.limitDate()).toTime_t(), TRUE);
+                    rule->until = icaltime_null_time();
+                    rule->until.year = qRule.limitDate().year();
+                    rule->until.month = qRule.limitDate().month();
+                    rule->until.day = qRule.limitDate().day();
+                    rule->until.is_date = 1;
                 }
                 break;
             case QOrganizerRecurrenceRule::CountLimit:
@@ -2457,6 +2514,7 @@ void QOrganizerEDSEngine::parseId(ECalComponent *comp,
                     .arg(edsId->m_itemId));
 
     if (edsParentId) {
+        qWarning() << "item id: "<<edsId->m_itemId<<", has parentId:"<<edsParentId->m_itemId;
         QOrganizerItemParent itemParent = item->detail(QOrganizerItemDetail::TypeParent);
         itemParent.setParentId(QOrganizerItemId(QOrganizerItemId(edsParentId->managerUri(),edsParentId->toByteArray())));
         item->saveDetail(&itemParent);
@@ -2734,11 +2792,17 @@ void QOrganizerEDSEngine::parseId(const QOrganizerItem &item, ECalComponent *com
 
         if (!rId.isEmpty()) {
             ECalComponentRange recur_id;
-            struct icaltimetype tt = icaltime_from_string(rId.toUtf8().data());
+
+            // use component tz on recurrence id
+            ECalComponentDateTime dt;
+            e_cal_component_get_dtstart(comp, &dt);
+            dt.value = g_new0(icaltimetype, 1);
+            *dt.value = icaltime_from_string(rId.toUtf8().data());
 
             recur_id.type = E_CAL_COMPONENT_RANGE_SINGLE;
-            recur_id.datetime.value = &tt;
+            recur_id.datetime = dt;
             e_cal_component_set_recurid(comp, &recur_id);
+            e_cal_component_free_datetime(&dt);
         }
     }
 }
