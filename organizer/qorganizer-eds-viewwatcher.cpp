@@ -202,12 +202,12 @@ void ViewWatcher::onObjectsModified(ECalClientView *view,
     self->notify();
 }
 
-const QList<QOrganizerItemDetail::DetailType> &ViewWatcher::parseTypes(GSList *objects) {
+const QList<QOrganizerItemDetail::DetailType> ViewWatcher::parseTypes(GSList *objects) {
     QList<QOrganizerItemDetail::DetailType> result;
 
     for (GSList *l = objects; l; l = l->next) {
         //qWarning() << "parseTypes" << l;
-        result << QOrganizerItemDetail::DetailType::TypeEventTime;
+        result << QOrganizerItemDetail::DetailType::TypeDisplayLabel;
     }
     return result;
 }
