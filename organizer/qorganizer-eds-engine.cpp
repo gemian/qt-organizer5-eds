@@ -1439,9 +1439,8 @@ void QOrganizerEDSEngine::parseEndTime(ECalComponent *comp, QOrganizerItem *item
     g_free(dt);
 }
 
-void QOrganizerEDSEngine::parseWeekRecurrence(struct icalrecurrencetype *rule, QtOrganizer::QOrganizerRecurrenceRule *qRule)
-{
-    static QMap<icalrecurrencetype_weekday, Qt::DayOfWeek>  daysOfWeekMap;
+QMap<icalrecurrencetype_weekday, Qt::DayOfWeek> QOrganizerEDSEngine::getDaysOfWeekMapIcalToQt() {
+    static QMap<icalrecurrencetype_weekday, Qt::DayOfWeek> daysOfWeekMap;
     if (daysOfWeekMap.isEmpty()) {
         daysOfWeekMap.insert(ICAL_MONDAY_WEEKDAY, Qt::Monday);
         daysOfWeekMap.insert(ICAL_THURSDAY_WEEKDAY, Qt::Thursday);
@@ -1451,6 +1450,12 @@ void QOrganizerEDSEngine::parseWeekRecurrence(struct icalrecurrencetype *rule, Q
         daysOfWeekMap.insert(ICAL_SATURDAY_WEEKDAY, Qt::Saturday);
         daysOfWeekMap.insert(ICAL_SUNDAY_WEEKDAY, Qt::Sunday);
     }
+    return daysOfWeekMap;
+}
+
+void QOrganizerEDSEngine::parseWeekRecurrence(struct icalrecurrencetype *rule, QtOrganizer::QOrganizerRecurrenceRule *qRule)
+{
+    auto daysOfWeekMap = getDaysOfWeekMapIcalToQt();
 
     qRule->setFrequency(QOrganizerRecurrenceRule::Weekly);
 
@@ -1467,6 +1472,8 @@ void QOrganizerEDSEngine::parseWeekRecurrence(struct icalrecurrencetype *rule, Q
 
 void QOrganizerEDSEngine::parseMonthRecurrence(struct icalrecurrencetype *rule, QtOrganizer::QOrganizerRecurrenceRule *qRule)
 {
+    auto daysOfWeekMap = getDaysOfWeekMapIcalToQt();
+
     qRule->setFrequency(QOrganizerRecurrenceRule::Monthly);
 
     QSet<int> daysOfMonth;
@@ -1476,7 +1483,26 @@ void QOrganizerEDSEngine::parseMonthRecurrence(struct icalrecurrencetype *rule, 
             daysOfMonth.insert(day);
         }
     }
+//    qWarning() << "QOrganizerEDSEngine::parseMonthRecurrence r-dom" << daysOfMonth;
     qRule->setDaysOfMonth(daysOfMonth);
+
+    QSet<int> positions;
+    QSet<Qt::DayOfWeek> daysOfWeek;
+    for (int d=0; d <= Qt::Sunday; d++) {
+        short day = rule->by_day[d];
+        if (day != ICAL_RECURRENCE_ARRAY_MAX) {
+            int pos = icalrecurrencetype_day_position(rule->by_day[d]);
+            if (pos > 0) {
+                positions.insert(pos);
+            }
+            daysOfWeek.insert(daysOfWeekMap[icalrecurrencetype_day_day_of_week(rule->by_day[d])]);
+        }
+    }
+//    qWarning() << "QOrganizerEDSEngine::parseMonthRecurrence r-by_day: "<<daysOfWeek <<", pos: " << positions;
+    if (positions.size() > 0) {
+        qRule->setPositions(positions);
+    }
+    qRule->setDaysOfWeek(daysOfWeek);
 }
 
 void QOrganizerEDSEngine::parseYearRecurrence(struct icalrecurrencetype *rule, QtOrganizer::QOrganizerRecurrenceRule *qRule)
@@ -1584,13 +1610,15 @@ void QOrganizerEDSEngine::parseRecurrence(ECalComponent *comp, QOrganizerItem *i
             qRule.setInterval(rule->interval);
 
             QSet<int> positions;
-            for (int d=0; d < ICAL_BY_SETPOS_SIZE; d++) {
-                short day = rule->by_set_pos[d];
+            for (short day : rule->by_set_pos) {
                 if (day != ICAL_RECURRENCE_ARRAY_MAX) {
                     positions.insert(day);
                 }
             }
-            qRule.setPositions(positions);
+//            qWarning() << "QOrganizerEDSEngine::parseRecurrence positions: " << positions;
+            if (positions.size() > 0) {
+                qRule.setPositions(positions);
+            }
 
             qRules << qRule;
         }
@@ -2186,16 +2214,7 @@ void QOrganizerEDSEngine::parseTodoStartTime(const QOrganizerItem &item, ECalCom
 
 void QOrganizerEDSEngine::parseWeekRecurrence(const QOrganizerRecurrenceRule &qRule, struct icalrecurrencetype *rule)
 {
-    static QMap<Qt::DayOfWeek, icalrecurrencetype_weekday>  daysOfWeekMap;
-    if (daysOfWeekMap.isEmpty()) {
-        daysOfWeekMap.insert(Qt::Monday, ICAL_MONDAY_WEEKDAY);
-        daysOfWeekMap.insert(Qt::Thursday, ICAL_THURSDAY_WEEKDAY);
-        daysOfWeekMap.insert(Qt::Wednesday, ICAL_WEDNESDAY_WEEKDAY);
-        daysOfWeekMap.insert(Qt::Tuesday, ICAL_TUESDAY_WEEKDAY);
-        daysOfWeekMap.insert(Qt::Friday, ICAL_FRIDAY_WEEKDAY);
-        daysOfWeekMap.insert(Qt::Saturday, ICAL_SATURDAY_WEEKDAY);
-        daysOfWeekMap.insert(Qt::Sunday, ICAL_SUNDAY_WEEKDAY);
-    }
+    auto daysOfWeekMap = getDaysOfWeekMapQtToIcal();
 
     QList<Qt::DayOfWeek> daysOfWeek = qRule.daysOfWeek().toList();
     int c = 0;
@@ -2211,17 +2230,52 @@ void QOrganizerEDSEngine::parseWeekRecurrence(const QOrganizerRecurrenceRule &qR
     }
 }
 
+QMap<Qt::DayOfWeek, icalrecurrencetype_weekday> QOrganizerEDSEngine::getDaysOfWeekMapQtToIcal() {
+    static QMap<Qt::DayOfWeek, icalrecurrencetype_weekday>  daysOfWeekMap;
+    if (daysOfWeekMap.isEmpty()) {
+        daysOfWeekMap.insert(Qt::Monday, ICAL_MONDAY_WEEKDAY);
+        daysOfWeekMap.insert(Qt::Thursday, ICAL_THURSDAY_WEEKDAY);
+        daysOfWeekMap.insert(Qt::Wednesday, ICAL_WEDNESDAY_WEEKDAY);
+        daysOfWeekMap.insert(Qt::Tuesday, ICAL_TUESDAY_WEEKDAY);
+        daysOfWeekMap.insert(Qt::Friday, ICAL_FRIDAY_WEEKDAY);
+        daysOfWeekMap.insert(Qt::Saturday, ICAL_SATURDAY_WEEKDAY);
+        daysOfWeekMap.insert(Qt::Sunday, ICAL_SUNDAY_WEEKDAY);
+    }
+    return daysOfWeekMap;
+}
+
 void QOrganizerEDSEngine::parseMonthRecurrence(const QOrganizerRecurrenceRule &qRule, struct icalrecurrencetype *rule)
 {
+//    qWarning() << "QOrganizerEDSEngine::parseMonthRecurrence qR-dOM" << qRule.daysOfMonth();
     rule->freq = ICAL_MONTHLY_RECURRENCE;
 
+    auto daysOfWeekMap = getDaysOfWeekMapQtToIcal();
+
+    QList<Qt::DayOfWeek> daysOfWeek = qRule.daysOfWeek().toList();
     int c = 0;
     Q_FOREACH(int daysOfMonth, qRule.daysOfMonth()) {
-        rule->by_month_day[c++] = daysOfMonth;
+        rule->by_month_day[c++] = static_cast<short>(daysOfMonth);
     }
     for (int d = c; d < ICAL_BY_MONTHDAY_SIZE; d++) {
         rule->by_month_day[d] = ICAL_RECURRENCE_ARRAY_MAX;
     }
+
+    c = 0;
+    int pos = 0;
+    for (int p : qRule.positions()) {
+        pos = p;
+    }
+    for(int d=Qt::Monday; d <= Qt::Sunday; d++) {
+        if (daysOfWeek.contains(static_cast<Qt::DayOfWeek>(d))) {
+            //header documentation says *7, but code says *8 turns out there are bugs in evolution (3.22.6) that mean we don't want to do it this way
+            //rule->by_day[c++] = static_cast<short>((ABS(pos) * 8 + daysOfWeekMap[static_cast<Qt::DayOfWeek>(d)]) * ((pos < 0) ? -1 : 1));
+            rule->by_day[c++] = static_cast<short>(daysOfWeekMap[static_cast<Qt::DayOfWeek>(d)]);
+        }
+    }
+    for (int d = c; d < ICAL_BY_DAY_SIZE; d++) {
+        rule->by_day[d] = ICAL_RECURRENCE_ARRAY_MAX;
+    }
+//    qWarning() << "QOrganizerEDSEngine::parseMonthRecurrence pos: " << pos << ", byday[0]: " << rule->by_day[0];
 }
 
 void QOrganizerEDSEngine::parseYearRecurrence(const QOrganizerRecurrenceRule &qRule, struct icalrecurrencetype *rule)
@@ -2321,15 +2375,16 @@ void QOrganizerEDSEngine::parseRecurrence(const QOrganizerItem &item, ECalCompon
             }
 
             QSet<int> positions = qRule.positions();
-            for (int d=1; d < ICAL_BY_SETPOS_SIZE; d++) {
-                if (positions.contains(d)) {
-                    rule->by_set_pos[d] = d;
-                } else {
-                    rule->by_set_pos[d] = ICAL_RECURRENCE_ARRAY_MAX;
-                }
+            short c=0;
+            for (auto d : positions) {
+                rule->by_set_pos[c++] = static_cast<short>(d);
             }
+            for (short d=c; d < ICAL_BY_SETPOS_SIZE; d++) {
+                rule->by_set_pos[d] = ICAL_RECURRENCE_ARRAY_MAX;
+            }
+//            qWarning() << "QOrganizerEDSEngine::parseRecurrence qRule: " << positions << ", by_set_pos[0]: " << rule->by_set_pos[0];
 
-            rule->interval = qRule.interval();
+            rule->interval = static_cast<short>(qRule.interval());
             ruleList = g_slist_append(ruleList, rule);
         }
         e_cal_component_set_rrule_list(comp, ruleList);
@@ -2341,7 +2396,7 @@ void QOrganizerEDSEngine::parsePriority(const QOrganizerItem &item, ECalComponen
 {
     QOrganizerItemPriority priority = item.detail(QOrganizerItemDetail::TypePriority);
     if (!priority.isEmpty()) {
-        gint iPriority = (gint) priority.priority();
+        auto iPriority = (gint) priority.priority();
         e_cal_component_set_priority(comp, &iPriority);
     }
 }

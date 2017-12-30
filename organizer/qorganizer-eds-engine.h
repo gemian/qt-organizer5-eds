@@ -260,6 +260,9 @@ private:
     friend class FetchRequestData;
     friend class FetchOcurrenceData;
     friend class QOrganizerParseEventThread;
+
+    static QMap<Qt::DayOfWeek, icalrecurrencetype_weekday> getDaysOfWeekMapQtToIcal();
+    static QMap<icalrecurrencetype_weekday, Qt::DayOfWeek> getDaysOfWeekMapIcalToQt();
 };
 
 //FIXME: Do we really need this, this looks wrong
