@@ -2569,7 +2569,7 @@ void QOrganizerEDSEngine::parseId(ECalComponent *comp,
                     .arg(edsId->m_itemId));
 
     if (edsParentId) {
-        qWarning() << "item id: "<<edsId->m_itemId<<", has parentId:"<<edsParentId->m_itemId;
+//        qWarning() << "item id: "<<edsId->m_itemId<<", has parentId:"<<edsParentId->m_itemId;
         QOrganizerItemParent itemParent = item->detail(QOrganizerItemDetail::TypeParent);
         itemParent.setParentId(QOrganizerItemId(QOrganizerItemId(edsParentId->managerUri(),edsParentId->toByteArray())));
         item->saveDetail(&itemParent);
