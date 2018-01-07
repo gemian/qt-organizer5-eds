@@ -7,14 +7,15 @@ Build-Depends: cmake (>= 2.8.9),
                apt-utils,
                libecal1.2-dev (>= 3.12),
                libedataserver1.2-dev (>= 3.12),
-               qt5-default,
+               qtbase5-dev,
+               qtchooser,
                qt5-qmake,
                qtbase5-dev,
                qtpim5-dev,
                evolution-data-server,
                dbus-test-runner,
                gvfs-daemons
-Standards-Version: 3.9.4
+Standards-Version: 3.9.8
 Homepage: https://github.com/adamboardman/qt-organizer5-eds
 Vcs-Git: https://github.com/adamboardman/qt-organizer5-eds.git
 Vcs-Browser: https://github.com/adamboardman/qt-organizer5-eds.git
