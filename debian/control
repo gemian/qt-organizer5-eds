@@ -1,9 +1,10 @@
 Source: qtorganizer5-eds
 Section: utils
 Priority: optional
-Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Maintainer: Adam Boardman <adamboardman@gmail.com>
 Build-Depends: cmake (>= 2.8.9),
                debhelper (>= 9),
+               apt-utils,
                libecal1.2-dev (>= 3.12),
                libedataserver1.2-dev (>= 3.12),
                qt5-default,
