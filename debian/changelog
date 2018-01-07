@@ -1,3 +1,9 @@
+qtorganizer5-eds (0.1.1~git20180105~0.1) stretch; urgency=medium
+
+  * Latest qtorganizer5-eds from upstream with some patches for use with debian stretch.
+
+ -- Adam Boardman <adamboardman@gmail.com>  Fri, 7 Jan 2018 18:46:49 +0000
+
 qtorganizer5-eds (0.1.1+16.10.20160928-0ubuntu1) yakkety; urgency=medium
 
   * Fix recurrence date. (LP: #1616040)
