@@ -3,6 +3,7 @@ Section: utils
 Priority: optional
 Maintainer: Adam Boardman <adamboardman@gmail.com>
 Build-Depends: cmake (>= 2.8.9),
+               extra-cmake-modules,
                debhelper (>= 9),
                apt-utils,
                libecal1.2-dev (>= 3.12),
