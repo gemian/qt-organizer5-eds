@@ -2,10 +2,14 @@ project(qorganizer-eds)
 
 cmake_minimum_required(VERSION 2.8.9)
 
+find_package(ECM REQUIRED NO_MODULE)
+
+set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${ECM_KDE_MODULE_DIR} "${CMAKE_SOURCE_DIR}/cmake")
+
 include(FindPkgConfig)
 # Standard install paths
 include(GNUInstallDirs)
-
+include(KDEInstallDirs)
 
 find_package(Qt5Core REQUIRED)
 add_definitions(-DQT_NO_KEYWORDS)
