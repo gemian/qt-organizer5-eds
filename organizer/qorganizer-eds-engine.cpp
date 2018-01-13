@@ -151,6 +151,7 @@ void QOrganizerEDSEngine::itemsAsyncStart(FetchRequestData *data)
         g_object_unref(client);
 
         if (data->hasDateInterval()) {
+//            qDebug() << "QOrganizerEDSEngine::itemsAsyncStart" << data->startDate();
             e_cal_client_generate_instances(data->client(),
                                             data->startDate(),
                                             data->endDate(),
@@ -404,6 +405,7 @@ void QOrganizerEDSEngine::itemOcurrenceAsyncGetObjectDone(GObject *source,
     }
 
     if (data->isLive()) {
+//        qDebug() << "QOrganizerEDSEngine::itemOcurrenceAsyncGetObjectDone" << data->startDate();
         e_cal_client_generate_instances_for_object(data->client(),
                                                    comp,
                                                    data->startDate(),
@@ -1332,15 +1334,16 @@ QDateTime QOrganizerEDSEngine::fromIcalTime(struct icaltimetype value, const cha
 
         tmTime = icaltime_as_timet_with_zone(value, timezone);
         QTimeZone qTz(tzLocationName);
-        return QDateTime::fromTime_t(tmTime, qTz);
+        return QDateTime::fromTime_t(tmTime, qTz).toLocalTime();
     } else {
         tmTime = icaltime_as_timet(value);
         QDateTime t = QDateTime::fromTime_t(tmTime, Qt::UTC);
+//        qDebug() << "QOrganizerEDSEngine::fromIcalTime" << tmTime << "QDT:" << t;
         // all day events will set as local time
         // floating time events will be set with invalid time zone
         return QDateTime(t.date(),
                          (allDayEvent ? QTime(0,0,0) : t.time()),
-                         (allDayEvent ? QTimeZone(QTimeZone::systemTimeZoneId()) : QTimeZone()));
+                         (allDayEvent ? QTimeZone(QTimeZone::systemTimeZoneId()) : QTimeZone())).toLocalTime();
     }
 }
 
@@ -1350,6 +1353,7 @@ icaltimetype QOrganizerEDSEngine::fromQDateTime(const QDateTime &dateTime,
 {
     QDateTime finalDate(dateTime);
     QTimeZone tz;
+//    qDebug() << "QOrganizerEDSEngine::fromQDateTime i:" << finalDate;
 
     if (!allDay) {
         switch (finalDate.timeSpec()) {
@@ -1385,7 +1389,7 @@ icaltimetype QOrganizerEDSEngine::fromQDateTime(const QDateTime &dateTime,
         finalDate = QDateTime(finalDate.date(),
                               invalidTime ? QTime(0, 0, 0) : finalDate.time(),
                               Qt::UTC);
-
+//        qDebug() << "QOrganizerEDSEngine::fromQDateTime o:" << finalDate;
         *tzId = "";
         return icaltime_from_timet(finalDate.toTime_t(), allDay);
     }
@@ -2168,6 +2172,7 @@ void QOrganizerEDSEngine::parseStartTime(const QOrganizerItem &item, ECalCompone
     QOrganizerEventTime etr = item.detail(QOrganizerItemDetail::TypeEventTime);
     if (!etr.isEmpty()) {
         QByteArray tzId;
+//        qDebug() << "QOrganizerEDSEngine::parseStartTime(item-ECal)" << etr.startDateTime();
         struct icaltimetype ict = fromQDateTime(etr.startDateTime(), etr.isAllDay(), &tzId);
         ECalComponentDateTime dt;
         dt.tzid = tzId.isEmpty() ? NULL : tzId.constData();
