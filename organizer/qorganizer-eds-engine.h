@@ -173,6 +173,7 @@ private:
     static void parseDueDate(const QtOrganizer::QOrganizerItem &item, ECalComponent *comp);
     static void parseProgress(const QtOrganizer::QOrganizerItem &item, ECalComponent *comp);
     static void parseStatus(const QtOrganizer::QOrganizerItem &item, ECalComponent *comp);
+    static void parseFinishedDate(const QtOrganizer::QOrganizerItem &item, ECalComponent *comp);
     static void parseAttendeeList(const QtOrganizer::QOrganizerItem &item, ECalComponent *comp);
     static void parseExtendedDetails(const QtOrganizer::QOrganizerItem &item, ECalComponent *comp);
 
@@ -199,6 +200,7 @@ private:
     static void parseDueDate(ECalComponent *comp, QtOrganizer::QOrganizerItem *item);
     static void parseProgress(ECalComponent *comp, QtOrganizer::QOrganizerItem *item);
     static void parseStatus(ECalComponent *comp, QtOrganizer::QOrganizerItem *item);
+    static void parseFinishedDate(ECalComponent *comp, QtOrganizer::QOrganizerItem *item);
     static void parseAttendeeList(ECalComponent *comp, QtOrganizer::QOrganizerItem *item);
     static void parseExtendedDetails(ECalComponent *comp, QtOrganizer::QOrganizerItem *item);
 

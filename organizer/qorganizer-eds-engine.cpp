@@ -1427,8 +1427,7 @@ void QOrganizerEDSEngine::parseTodoStartTime(ECalComponent *comp, QOrganizerItem
     g_free(dt);
 }
 
-void QOrganizerEDSEngine::parseEndTime(ECalComponent *comp, QOrganizerItem *item)
-{
+void QOrganizerEDSEngine::parseEndTime(ECalComponent *comp, QOrganizerItem *item) {
     ECalComponentDateTime *dt = g_new0(ECalComponentDateTime, 1);
     e_cal_component_get_dtend(comp, dt);
     if (dt->value) {
@@ -1681,6 +1680,7 @@ void QOrganizerEDSEngine::parseDueDate(ECalComponent *comp, QOrganizerItem *item
     e_cal_component_free_datetime(&due);
 }
 
+
 void QOrganizerEDSEngine::parseProgress(ECalComponent *comp, QOrganizerItem *item)
 {
     gint percentage = e_cal_component_get_percent_as_int(comp);
@@ -1696,7 +1696,7 @@ void QOrganizerEDSEngine::parseStatus(ECalComponent *comp, QOrganizerItem *item)
     icalproperty_status status;
     e_cal_component_get_status(comp, &status);
 
-    QOrganizerTodoProgress tp;
+    QOrganizerTodoProgress tp = item->detail(QOrganizerItemDetail::TypeTodoProgress);
     switch(status) {
         case ICAL_STATUS_NONE:
             tp.setStatus(QOrganizerTodoProgress::StatusNotStarted);
@@ -1712,7 +1712,20 @@ void QOrganizerEDSEngine::parseStatus(ECalComponent *comp, QOrganizerItem *item)
             //TODO: not supported
             break;
     }
+
     item->saveDetail(&tp);
+}
+
+void QOrganizerEDSEngine::parseFinishedDate(ECalComponent *comp, QOrganizerItem *item)
+{
+    ECalComponentDateTime completed;
+    e_cal_component_get_completed(comp, &completed.value);
+    if (completed.value) {
+        QOrganizerTodoProgress tp = item->detail(QOrganizerItemDetail::TypeTodoProgress);
+        tp.setFinishedDateTime(fromIcalTime(*completed.value, icaltimezone_get_tzid(icaltimezone_get_utc_timezone())));
+        item->saveDetail(&tp);
+    }
+    e_cal_component_free_icaltimetype(completed.value);
 }
 
 void QOrganizerEDSEngine::parseAttendeeList(ECalComponent *comp, QOrganizerItem *item)
@@ -1853,6 +1866,7 @@ QOrganizerItem *QOrganizerEDSEngine::parseToDo(ECalComponent *comp,
         detailsHint.contains(QOrganizerItemDetail::TypeTodoProgress)) {
         parseProgress(comp, todo);
         parseStatus(comp, todo);
+        parseFinishedDate(comp, todo);
     }
 
     return todo;
@@ -2466,6 +2480,22 @@ void QOrganizerEDSEngine::parseStatus(const QtOrganizer::QOrganizerItem &item, E
     }
 }
 
+void QOrganizerEDSEngine::parseFinishedDate(const QtOrganizer::QOrganizerItem &item, ECalComponent *comp)
+{
+    QOrganizerTodoProgress tp = item.detail(QOrganizerItemDetail::TypeTodoProgress);
+    if (!tp.isEmpty() && !tp.finishedDateTime().isNull()) {
+        QDateTime finishedDateTime = tp.finishedDateTime();
+
+        QByteArray tzId;
+        struct icaltimetype ict = fromQDateTime(finishedDateTime, true, &tzId);
+        ECalComponentDateTime dt;
+        dt.tzid = tzId.isEmpty() ? NULL : tzId.constData();
+        dt.value = &ict;
+        e_cal_component_get_completed(comp, &dt.value);
+
+    }
+}
+
 void QOrganizerEDSEngine::parseAttendeeList(const QOrganizerItem &item, ECalComponent *comp)
 {
     GSList *attendeeList = 0;
@@ -2629,6 +2659,7 @@ ECalComponent *QOrganizerEDSEngine::parseTodoItem(ECalClient *client, const QOrg
     parsePriority(item, comp);
     parseProgress(item, comp);
     parseStatus(item, comp);
+    parseFinishedDate(item, comp);
 
     return comp;
 }
