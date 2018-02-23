@@ -8,7 +8,6 @@ Build-Depends: cmake (>= 2.8.9),
                apt-utils,
                libecal1.2-dev (>= 3.12),
                libedataserver1.2-dev (>= 3.12),
-               qtbase5-dev,
                qtchooser,
                qt5-qmake,
                qtbase5-dev,
@@ -27,5 +26,6 @@ Multi-Arch: same
 Pre-Depends: ${misc:Pre-Depends},
 Depends: ${misc:Depends},
          ${shlibs:Depends},
+         evolution-data-server,
 Description: QtOrganizer engine for EDS calendar.
  A QOrganizerEngine implementation using eds.
