@@ -10,7 +10,7 @@ sudo apt-get qtpim5-dev
 # Compile EDS
 
 ```
-git clone https://github.com/adamboardman/qt-organizer5-eds.git
+git clone https://github.com/gemian/qt-organizer5-eds.git
 cd qt-organizer5-eds
 mkdir build
 cd build
