@@ -1379,8 +1379,8 @@ icaltimetype QOrganizerEDSEngine::fromQDateTime(const QDateTime &dateTime,
         }
     }
 
+    icaltimezone *timezone = 0;
     if (tz.isValid()) {
-        icaltimezone *timezone = 0;
         timezone = icaltimezone_get_builtin_timezone(tz.id().constData());
         *tzId = QByteArray(icaltimezone_get_tzid(timezone));
         return icaltime_from_timet_with_zone(finalDate.toTime_t(), allDay, timezone);
@@ -1391,7 +1391,8 @@ icaltimetype QOrganizerEDSEngine::fromQDateTime(const QDateTime &dateTime,
                               Qt::UTC);
 //        qDebug() << "QOrganizerEDSEngine::fromQDateTime o:" << finalDate;
         *tzId = "";
-        return icaltime_from_timet(finalDate.toTime_t(), allDay);
+        timezone = icaltimezone_get_utc_timezone();
+        return icaltime_from_timet_with_zone(finalDate.toTime_t(), allDay, timezone);
     }
 }
 
@@ -2333,25 +2334,25 @@ void QOrganizerEDSEngine::parseRecurrence(const QOrganizerItem &item, ECalCompon
         GSList *periodList = 0;
         Q_FOREACH(const QDate &dt, rec.recurrenceDates()) {
             ECalComponentPeriod *period = g_new0(ECalComponentPeriod, 1);
-            period->start = icaltime_from_timet(QDateTime(dt).toTime_t(), FALSE);
+            period->start = icaltime_from_timet_with_zone(QDateTime(dt).toTime_t(), FALSE, nullptr);
             periodList = g_slist_append(periodList, period);
             //TODO: period.end, period.duration
         }
         e_cal_component_set_rdate_list(comp, periodList);
         e_cal_component_free_period_list(periodList);
 
-        GSList *exdateList = 0;
+        GSList *exdateList = nullptr;
         Q_FOREACH(const QDate &dt, rec.exceptionDates()) {
             ECalComponentDateTime *dateTime = g_new0(ECalComponentDateTime, 1);
             struct icaltimetype *itt = g_new0(struct icaltimetype, 1);
-            *itt = icaltime_from_timet(QDateTime(dt).toTime_t(), FALSE);
+            *itt = icaltime_from_timet_with_zone(QDateTime(dt).toTime_t(), FALSE, nullptr);
             dateTime->value = itt;
             exdateList = g_slist_append(exdateList, dateTime);
         }
         e_cal_component_set_exdate_list(comp, exdateList);
         e_cal_component_free_exdate_list(exdateList);
 
-        GSList *ruleList = 0;
+        GSList *ruleList = nullptr;
         Q_FOREACH(const QOrganizerRecurrenceRule &qRule, rec.recurrenceRules()) {
             struct icalrecurrencetype *rule = g_new0(struct icalrecurrencetype, 1);
             icalrecurrencetype_clear(rule);
